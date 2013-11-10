@@ -3,8 +3,7 @@
 var page = document.getElementById("page"), // get div element covering whole page, for mouse and touch events
 stage = document.getElementById("stage"), // get canvas element and context
 ctx = stage.getContext("2d");
-stage.width = 5000;
-stage.height = window.innerHeight*0.9;
+ctx.scale(2,2); // scale back to full dimensions after oversampling and reduction
 
 var listaCursos = []; // base de datos todos los cursos
 var semestres = []; // array guarda arrays que son listas de cursos de cada semestre
@@ -32,6 +31,22 @@ function cursoNuevo(curso) { // construye ícono del curso
 			case 2:
 				ctx.fillStyle = "#0044EE";
 				break;
+		}
+		if (curso.prerrequisitos !== "-") {
+			// TO DO: break prerrequisitos string into array of prerreq, compare each prerreq to each codigo in listaCursos
+			for (var i=0; i<listaCursos.length; i++) {
+				var prerreq = listaCursos[i];
+				if (curso.prerrequisitos === prerreq.codigo) {
+					console.log(prerreq.codigo);
+					ctx.lineWidth = 6;
+					ctx.lineCap = 'round';
+					ctx.strokeStyle = "#990000";
+					ctx.beginPath();
+					ctx.moveTo(prerreq.X + 80, prerreq.Y - 3);
+					ctx.lineTo(curso.X - 80, curso.Y - 3);
+					ctx.stroke();
+				}
+			}
 		}
 		ctx.fillRect(curso.X-75, curso.Y-18, 150, 30); // dibuja rectangulo
 		ctx.fillStyle = '#000000';
