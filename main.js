@@ -14,12 +14,20 @@ for (var i=0; i<8; i++) { // añade un array dentro de semestres para cada semes
 var biologia = true; // toggle to show classes TO DO: button
 var microbio = true;
 
+// Appearance
+var boxWidth = 150;
+var boxHeight = 30;
+var spacerX = 50;
+var spacerY = 45;
+var lineWidth = 6;
+
+
 function cursoNuevo(curso) { // construye ícono del curso	
 	if ( (curso.programa === "-") || (biologia && curso.programa === "biologia" ) || (microbio && curso.programa === "microbiologia") ) { // Mostrar solo materias de los programas escogidos
 		semestres[curso.semestre].push(curso); // añade curso a lista de su semestre
 		curso.fila = semestres[curso.semestre].length; // guarda posición del curso en su semestre
-		curso.X = 200*curso.semestre; // ref coordinates
-		curso.Y = 75*curso.fila;
+		curso.X = (boxWidth+spacerX)*curso.semestre; // ref coordinates
+		curso.Y = (boxHeight+spacerY)*curso.fila;
 	}
 }
 
@@ -32,7 +40,7 @@ function findPrerreq(curso) {
 				var otroCurso = listaCursos[j];
 				if (prerreq === otroCurso.codigo) { // compare each prerreq to each codigo in listaCursos
 					//console.log(otroCurso.codigo); 
-					ctx.lineWidth = 6;  // draw line from prerreq to current course
+					ctx.lineWidth = lineWidth;  // draw line from prerreq to current course
 					ctx.lineCap = 'round';
 					ctx.lineJoin = 'round';
 					ctx.strokeStyle = "#990000";
@@ -42,14 +50,14 @@ function findPrerreq(curso) {
 						alert (otroCurso.nombre + " es prerrequisito de " + curso.nombre + " y no pueden estar en el mismo semestre.");
 					}
 					else if (dif === 1) { // si estan a un semestre de distancia, dibujar linea normal
-						ctx.moveTo(otroCurso.X + 80, otroCurso.Y - 3);
-						ctx.lineTo(curso.X - 80, curso.Y - 3);
+						ctx.moveTo(otroCurso.X + boxWidth/2 + lineWidth, otroCurso.Y);
+						ctx.lineTo(curso.X - boxWidth/2 - lineWidth, curso.Y);
 					}
 					else { // si están a más de un semestre de distancia, 
-						ctx.moveTo(otroCurso.X + 80, otroCurso.Y - 3); // dibujar línea hacia a bajo,
-						ctx.lineTo(otroCurso.X + 80, otroCurso.Y + 35);
-						ctx.lineTo(curso.X - 130, otroCurso.Y + 35); // luego linea que pase entre los otros cursos,
-						ctx.lineTo(curso.X - 80, curso.Y - 3); // luego linea normal
+						ctx.moveTo(otroCurso.X + boxWidth/2 + lineWidth, otroCurso.Y);
+						ctx.lineTo(otroCurso.X + boxWidth/2 + lineWidth, otroCurso.Y + (boxHeight+spacerY)/2); // dibujar línea hacia a bajo,
+						ctx.lineTo(curso.X - boxWidth/2 - spacerX, otroCurso.Y + (boxHeight+spacerY)/2); // luego linea que pase entre los otros cursos,
+						ctx.lineTo(curso.X - boxWidth/2 - lineWidth, curso.Y); // luego linea normal
 					}
 					
 					ctx.stroke();
@@ -68,17 +76,17 @@ function findCorreq(curso) {
 				var otroCurso = listaCursos[j];
 				if (correq === otroCurso.codigo) { // compare each prerreq to each codigo in listaCursos
 					//console.log(otroCurso.codigo); 
-					ctx.lineWidth = 6;  // draw line from prerreq to current course
+					ctx.lineWidth = lineWidth;  // draw line from prerreq to current course
 					ctx.lineCap = 'round';
 					ctx.strokeStyle = "#000099";
 					ctx.beginPath();
 					if (otroCurso.Y > curso.Y) {
-						ctx.moveTo(otroCurso.X, otroCurso.Y - 24);
-						ctx.lineTo(curso.X, curso.Y + 18);
+						ctx.moveTo(otroCurso.X, otroCurso.Y - boxHeight/2 - lineWidth);
+						ctx.lineTo(curso.X, curso.Y + boxHeight/2 + lineWidth);
 					}
 					else {
-						ctx.moveTo(otroCurso.X, otroCurso.Y + 18);
-						ctx.lineTo(curso.X, curso.Y - 24);
+						ctx.moveTo(otroCurso.X, otroCurso.Y + boxHeight/2 + lineWidth);
+						ctx.lineTo(curso.X, curso.Y - boxHeight/2 - lineWidth);
 					}
 					ctx.stroke();
 				}
@@ -105,11 +113,11 @@ function render() {
 		
 		findPrerreq(curso); // draw prerrequisito lines
 		findCorreq(curso); // draw correquisito lines
-		ctx.fillRect(curso.X-75, curso.Y-18, 150, 30); // dibuja rectangulo
+		ctx.fillRect(curso.X-boxWidth/2, curso.Y-boxHeight/2, boxWidth, boxHeight); // dibuja rectangulo
 		ctx.fillStyle = '#000000';
 		ctx.textAlign = 'center';
 		ctx.font = 'bold 10pt Arial';
-		ctx.fillText(curso.nombre, curso.X, curso.Y); // escribe nombre
+		ctx.fillText(curso.nombre, curso.X, curso.Y+lineWidth); // escribe nombre
 	}
 }
 
