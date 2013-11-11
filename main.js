@@ -34,10 +34,24 @@ function findPrerreq(curso) {
 					//console.log(otroCurso.codigo); 
 					ctx.lineWidth = 6;  // draw line from prerreq to current course
 					ctx.lineCap = 'round';
+					ctx.lineJoin = 'round';
 					ctx.strokeStyle = "#990000";
 					ctx.beginPath();
-					ctx.moveTo(otroCurso.X + 80, otroCurso.Y - 3);
-					ctx.lineTo(curso.X - 80, curso.Y - 3);
+					var dif = Math.abs(otroCurso.semestre-curso.semestre);
+					if (dif === 0) { // si estan en el mismo semestre, alertar
+						alert (otroCurso.nombre + " es prerrequisito de " + curso.nombre + " y no pueden estar en el mismo semestre.");
+					}
+					else if (dif === 1) { // si estan a un semestre de distancia, dibujar linea normal
+						ctx.moveTo(otroCurso.X + 80, otroCurso.Y - 3);
+						ctx.lineTo(curso.X - 80, curso.Y - 3);
+					}
+					else { // si están a más de un semestre de distancia, 
+						ctx.moveTo(otroCurso.X + 80, otroCurso.Y - 3); // dibujar línea hacia a bajo,
+						ctx.lineTo(otroCurso.X + 80, otroCurso.Y + 35);
+						ctx.lineTo(curso.X - 130, otroCurso.Y + 35); // luego linea que pase entre los otros cursos,
+						ctx.lineTo(curso.X - 80, curso.Y - 3); // luego linea normal
+					}
+					
 					ctx.stroke();
 				}
 			}
