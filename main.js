@@ -26,7 +26,7 @@ function cursoNuevo(curso) { // construye ícono del curso
 	if ( (curso.programa === "-") || (biologia && curso.programa === "biologia" ) || (microbio && curso.programa === "microbiologia") ) { // Mostrar solo materias de los programas escogidos
 		semestres[curso.semestre].push(curso); // añade curso a lista de su semestre
 		curso.fila = semestres[curso.semestre].length; // guarda posición del curso en su semestre
-		curso.X = (boxWidth+spacerX)*curso.semestre; // ref coordinates
+		curso.X = (boxWidth+spacerX)*(curso.semestre-0.5); // ref coordinates
 		curso.Y = (boxHeight+spacerY)*curso.fila;
 	}
 }
@@ -138,7 +138,13 @@ function preload() { // load db before init
 	function showInfo(data, tabletop) {
 		listaCursos = data; // save spreadsheet to js
 		//console.log(listaCursos);
-		init();
+		if (listaCursos.length > 1) {
+			init();
+			//alert(listaCursos[1].nombre);
+		}
+		else {
+			alert("Error: no pude encontrar la lista de cursos");
+		}
 	}
 }
 
