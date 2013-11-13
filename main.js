@@ -3,7 +3,7 @@
 var page = document.getElementById("page"), // get div element covering whole page, for mouse and touch events
 stage = document.getElementById("stage"), // get canvas element and context
 ctx = stage.getContext("2d");
-ctx.scale(2,2); // scale back to full dimensions after oversampling and reduction
+ctx.scale(2, 2); // scale back to full dimensions after oversampling and reduction
 
 var listaCursos = []; // base de datos todos los cursos
 var semestres = []; // array guarda arrays que son listas de cursos de cada semestre
@@ -18,7 +18,7 @@ var microbio = true;
 var boxWidth = 150;
 var boxHeight = 30;
 var spacerX = 50;
-var spacerY = 45;
+var spacerY = 30;
 var lineWidth = 6;
 
 
@@ -27,7 +27,7 @@ function cursoNuevo(curso) { // construye ícono del curso
 		semestres[curso.semestre].push(curso); // añade curso a lista de su semestre
 		curso.fila = semestres[curso.semestre].length; // guarda posición del curso en su semestre
 		curso.X = (boxWidth+spacerX)*(curso.semestre-0.5); // ref coordinates
-		curso.Y = (boxHeight+spacerY)*curso.fila;
+		curso.Y = (boxHeight+spacerY)*(curso.fila-0.5);
 	}
 }
 
@@ -39,7 +39,7 @@ function findPrerreq(curso) {
 			for (var j=0; j<listaCursos.length; j++) { // loop through all courses
 				var otroCurso = listaCursos[j];
 				if (prerreq === otroCurso.codigo) { // compare each prerreq to each codigo in listaCursos
-					//console.log(otroCurso.codigo); 
+					console.log(otroCurso.codigo); 
 					ctx.lineWidth = lineWidth;  // draw line from prerreq to current course
 					ctx.lineCap = 'round';
 					ctx.lineJoin = 'round';

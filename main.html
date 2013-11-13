@@ -3,17 +3,19 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Super Bio Pénsum Dinámico</title>
-		<style> #stage { width: 5000px; height: 1000px; padding: 50px } #info { position: fixed; font-family: Arial; font-size: 12px; text-align: left} </style>
+		<link rel="stylesheet" href="style.css">
 	</head>
 	
 	<body style="text-align: center;">
-		<div id="info">
-			<p>
-				En verde, clases semestrales. En rojo, clases anuales dictadas el primer semestre. En azul, clases anuales dictadas el segundo semeste. Las líneas en rojo muestran los prerrequisitos de una clase, en azul muestran los correquisitos. Si no puedes ver esto, o tienes más información, visita <a href="https://docs.google.com/spreadsheet/ccc?key=0AihSbOSqv8G9dDR4WUZUWHRyRE9HSGhmR3NlT2NBVHc&usp=drive_web#gid=0">https://docs.google.com/spreadsheet/ccc?key=0AihSbOSqv8G9dDR4WUZUWHRyRE9HSGhmR3NlT2NBVHc&usp=drive_web#gid=0</a>
-			</p>
+		<div id="info" class = "wrapper">
+			<div class="center">
+				<p>
+					En verde, clases semestrales. En rojo, clases anuales dictadas el primer semestre. En azul, clases anuales dictadas el segundo semeste. Las líneas en rojo muestran los prerrequisitos de una clase, en azul muestran los correquisitos. Si no puedes ver esto, o tienes más información, visita <a href="https://docs.google.com/spreadsheet/ccc?key=0AihSbOSqv8G9dDR4WUZUWHRyRE9HSGhmR3NlT2NBVHc&usp=drive_web#gid=0">https://docs.google.com/spreadsheet/ccc?key=0AihSbOSqv8G9dDR4WUZUWHRyRE9HSGhmR3NlT2NBVHc&usp=drive_web#gid=0</a>
+				</p>
+			</div>
 		</div>
 		<div id="app">
-			<canvas id="stage" width=10000 height=2000></canvas>
+			<canvas id="stage" width=4000 height=1000><img src="error.png" alt="Error"></canvas>
 			<script src="tabletop.js" type="text/javascript"></script>
 			<script src="main.js" type="text/javascript"></script>
 		</div>
