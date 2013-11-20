@@ -8,11 +8,19 @@ ctx.scale(2, 2); // scale back to full dimensions after oversampling and reducti
 var listaCursos = []; // base de datos todos los cursos
 var semestres = []; // array guarda arrays que son listas de cursos de cada semestre
 
-var biologia = true; // toggle to show classes
+var biologia = true; // toggle to show courses
 var microbio = true;
+var electivas = true;
 
-var btnBiologia = { X : 15, Y : 20, hitRadius : 15 }; // botones de programa, toggle on-off
+var btnBiologia = { X : 15, Y : 20, hitRadius : 15 }; // botones de programa y electivas, toggle on-off TO DO: QUITAR BOTON ELECTIVAS, MAKE ARRAY OF BUTTONS
 var btnMicrobio = { X : 15, Y : 40, hitRadius : 15 };
+var btnElectivas = { X : 15, Y : 60, hitRadius : 15 };
+var btnReset = { X : 250, Y : 40, hitRadius : 15 };
+
+var numSemestres = 10; // guarda el numero de semestres. TO DO: Añadir interactividad. 
+
+var grab = false; // for dragging courses
+var cursoSelec = {}; // guarda al curso seleccionado
 
 // Appearance
 var boxWidth = 150;
@@ -22,18 +30,21 @@ var spacerY = 30;
 var lineWidth = 6;
 
 function cursoNuevo(curso) { // construye ícono del curso
-	if ( (curso.programa === "-") || (biologia && (curso.programa === "biologia") ) || (microbio && curso.programa === "microbiologia" ) ) { // Mostrar solo materias de los programas escogidos
-		curso.show = true;
+	if ( ((curso.programa === "-") || (biologia && (curso.programa === "biologia") ) || (microbio && curso.programa === "microbiologia" )) && !(!electivas && (curso.semestre === "electiva")) && !(curso.remove)) { // Mostrar solo materias de los programas escogidos TO DO: make this if block the else block
+		curso.show = true; // show curso
+		if (curso.semestre === "electiva") { // si es electiva, poner al final
+			curso.semestre = 10;
+		}
 		semestres[curso.semestre].push(curso); // añade curso a lista de su semestre
 		semestres[curso.semestre].creditos = (Number(semestres[curso.semestre].creditos) + Number(curso.creditos)); // añadir creditos
 		curso.fila = semestres[curso.semestre].length; // guarda posición del curso en su semestre
 		curso.X = (boxWidth+spacerX)*(curso.semestre-0.5); // ref coordinates
 		curso.Y = (boxHeight+spacerY)*(curso.fila+1.5);
-		curso.hitRadius = 15;
+		curso.hitRadius = 15; // for hittesting
 	}
 	else {
 		//console.log(curso.codigo);
-		curso.show = false;
+		curso.show = false; // if not, hide curso
 	}
 }
 
@@ -69,7 +80,7 @@ function findPrerreq(curso) {
 						ctx.stroke();
 					}
 					else {
-						alert("El curso " + curso.codigo + " tiene como prerrequisito al curso " + otroCurso.codigo);
+						alert("El curso " + curso.nombre + " tiene como prerrequisito al curso " + otroCurso.nombre);
 					}
 				}
 			}
@@ -101,7 +112,7 @@ function findCorreq(curso) {
 						ctx.stroke();
 					}
 					else { // si no se muestra el correquisito, avisar
-						alert("El curso " + curso.codigo + " tiene como correquisito al curso " + otroCurso.codigo);
+						alert("El curso " + curso.nombre + " tiene como correquisito al curso " + otroCurso.nombre);
 					}
 				}
 			}
@@ -156,14 +167,26 @@ function render() {
 	else {
 		ctx.fillText("Mostrar cursos microbiologia", btnMicrobio.X, btnMicrobio.Y+lineWidth); // escribe nombre
 	}
+	/*
+	if (electivas) {
+		ctx.fillText("Quitar cursos electivos", btnElectivas.X, btnElectivas.Y+lineWidth); // escribe nombre
+	}
+	else {
+		ctx.fillText("Mostrar cursos electivos", btnMicrobio.X, btnElectivas.Y+lineWidth); // escribe nombre
+	}*/
 	
 	// dibujar semestres y créditos
 	ctx.textAlign = 'center';
 	ctx.font = '11pt Arial';
-	for (var j=0; j<semestres.length; j++) { // añade un array dentro de semestres para cada semestre
-		ctx.fillText("Semestre " + (j+1), (boxWidth+spacerX)*(j+0.5), (boxHeight+spacerY*2)+lineWidth); // escribe semestre
-		ctx.fillText("Créditos: " + semestres[(j+1)].creditos, (boxWidth+spacerX)*(j+0.5), (boxHeight+spacerY*2.5)+lineWidth); // escribe semestre
+	for (var j=1; j<semestres.length; j++) { // añade un array dentro de semestres para cada semestre
+		ctx.fillText("Semestre " + j, (boxWidth+spacerX)*(j-0.5), (boxHeight+spacerY*2)+lineWidth); // escribe semestre
+		ctx.fillText("Créditos: " + semestres[j].creditos, (boxWidth+spacerX)*(j-0.5), (boxHeight+spacerY*2.5)+lineWidth); // escribe semestre
 	}
+	
+	ctx.fillStyle = '#FF0000'; // dibujar botón reset 
+	ctx.textAlign = 'left';
+	ctx.font = 'bold 20pt Arial';
+	ctx.fillText("RESET!", btnReset.X, btnReset.Y+lineWidth);
 }
 
 function hitTest(obj, x, y) {  // tests against stage coordinates
@@ -194,19 +217,62 @@ function clickHandler(e) { // click
 		//alert("toggle microbio");
 		init();
 	}
+	/*else if (hitTest(btnElectivas, clickX-80, clickY)) {
+		electivas = !electivas; // toggle microbiologia courses
+		//alert("toggle microbio");
+		init();
+	}*/
+	else if (hitTest(btnReset, clickX-80, clickY)) {
+		stage.removeEventListener("click", clickHandler, false); // click handler
+		stage.removeEventListener("mousedown", downHandler, false);
+		stage.removeEventListener("mouseup", upHandler, false);
+		stage.removeEventListener("mousemove", mouseMov, false);
+		preload();
+	}
 	else { // display course info
 		for (var i=0; i<listaCursos.length; i++) {
 			if (hitTest(listaCursos[i], clickX, clickY)) {
-				alert("Nombre: " + listaCursos[i].nombre + ". Código: " + listaCursos[i].codigo);
+				var r = confirm("Nombre: " + listaCursos[i].nombre + ". Código: " + listaCursos[i].codigo + "\n Quieres quitar este curso?");
+				if (r) {
+					listaCursos[i].remove = true;
+					init();
+				}
+				break;
 			}
 		}
 	}
 }
 
+function upHandler(e) { // set grab false when mouseUp
+	grab = false;
+	cursoSelec.semestre = Math.floor(cursoSelec.X/(boxWidth+spacerX) + 0.5);
+	cursoSelec = {};
+	init();
+}
+
+function downHandler(e) { // start grab
+	var clickX = e.clientX - rect.left; // find real coord
+	var clickY = e.clientY - rect.top;
+	grab = true;
+	for (var i=0; i<listaCursos.length; i++) {
+		if (hitTest(listaCursos[i], clickX, clickY)) {
+			cursoSelec = listaCursos[i];
+		}
+	}
+}
+
+function mouseMov(e) { // store mouse coord
+	var mouseX = e.clientX - rect.left; // find real coord
+	var mouseY = e.clientY - rect.top;
+	cursoSelec.X = mouseX;
+	cursoSelec.Y = mouseY;
+	render();
+}
+
 function init() { // re draw everything
 	semestres = [];
 	
-	for (var i=0; i<8; i++) { // añade un array dentro de semestres para cada semestre
+	for (var i=0; i<(numSemestres+1); i++) { // añade un array dentro de semestres para cada semestre
 		var nuevoSemestre = [];
 		nuevoSemestre.creditos = 0;
 		semestres.push(nuevoSemestre);
@@ -214,6 +280,7 @@ function init() { // re draw everything
 	for (var j=0; j<listaCursos.length; j++) { // crea cada curso en listaCursos
 		cursoNuevo(listaCursos[j]);
 	}
+	
 	render(); // render all cursos and lines
 }
 
@@ -230,11 +297,14 @@ function preload() { // load db before init
 			init();
 		}
 		else {
-			alert("Error: no pude encontrar la lista de cursos");
+			alert("Error: no pude encontrar la lista de cursos. Escríbele al programador de porquería que me diseñó: p.cardenas10@uniandes.edu.co");
 		}
 	}
 	
 	stage.addEventListener("click", clickHandler, false); // click handler
+	stage.addEventListener("mousedown", downHandler, false);
+	stage.addEventListener("mouseup", upHandler, false);
+	stage.addEventListener("mousemove", mouseMov, false);
 }
 
 preload();
