@@ -1,4 +1,4 @@
-// JavaScript Document TO DO: DRAG COURSES
+// JavaScript Document
 
 var page = document.getElementById("page"), // get div element covering whole page, for mouse and touch events
 stage = document.getElementById("stage"), // get canvas element and context
@@ -10,16 +10,18 @@ var semestres = []; // array guarda arrays que son listas de cursos de cada seme
 
 var biologia = true; // toggle to show courses
 var microbio = true;
-var electivas = true;
+var electivas = true; // TO DO: get rid of electivas button?
 
-var btnBiologia = { X : 15, Y : 20, hitRadius : 15 }; // botones de programa y electivas, toggle on-off TO DO: QUITAR BOTON ELECTIVAS, MAKE ARRAY OF BUTTONS
+var btnBiologia = { X : 15, Y : 20, hitRadius : 15 }; // botones de programa y electivas, toggle on-off TO DO: QUITAR BOTON ELECTIVAS, MAKE ARRAY OF BUTTONS?
 var btnMicrobio = { X : 15, Y : 40, hitRadius : 15 };
 var btnElectivas = { X : 15, Y : 60, hitRadius : 15 };
-var btnReset = { X : 250, Y : 40, hitRadius : 15 };
+var btnReset = { X : 250, Y : 30, hitRadius : 15 };
 
 var numSemestres = 10; // guarda el numero de semestres. TO DO: Añadir interactividad. 
 
+var rect = stage.getBoundingClientRect(); // for getting mouse event coordinates
 var grab = false; // for dragging courses
+var grabbed = false; // prevents clickHandler firing every time a course is dragged
 var cursoSelec = {}; // guarda al curso seleccionado
 
 // Appearance
@@ -40,29 +42,28 @@ function cursoNuevo(curso) { // construye ícono del curso
 		curso.fila = semestres[curso.semestre].length; // guarda posición del curso en su semestre
 		curso.X = (boxWidth+spacerX)*(curso.semestre-0.5); // ref coordinates
 		curso.Y = (boxHeight+spacerY)*(curso.fila+1.5);
-		curso.hitRadius = 15; // for hittesting
+		curso.hitRadius = 15; // for hit testing
 	}
 	else {
-		//console.log(curso.codigo);
-		curso.show = false; // if not, hide curso
+		curso.show = false; // if not, hide curso TO DO: Switch if and else block to simplify conditional
 	}
 }
 
 function findPrerreq(curso) {
-	if (curso.prerrequisitos !== "-") {
+	if (curso.prerrequisitos !== "-") { // if curso has prerequisites
 		var prerreqArr = curso.prerrequisitos.split(", "); // break prerrequisitos string into array of prerreq
 		for (var i=0; i<prerreqArr.length; i++) { // for every prerreq
 			var prerreq = prerreqArr[i];
 			for (var j=0; j<listaCursos.length; j++) { // loop through all courses
 				var otroCurso = listaCursos[j];
 				if (prerreq === otroCurso.codigo) { // compare each prerreq to each codigo in listaCursos
-					if (otroCurso.show) {
+					if (otroCurso.show) { // if prerequisite is showing
 						ctx.lineWidth = lineWidth;  // draw line from prerreq to current course
 						ctx.lineCap = 'round';
 						ctx.lineJoin = 'round';
-						ctx.strokeStyle = "#990000";
+						ctx.strokeStyle = "#990000"; // red lines
 						ctx.beginPath();
-						var dif = Math.abs(otroCurso.semestre-curso.semestre);
+						var dif = Math.abs(otroCurso.semestre-curso.semestre); // stores distance in semesters
 						if (dif === 0) { // si estan en el mismo semestre, alertar
 							alert (otroCurso.nombre + " es prerrequisito de " + curso.nombre + " y no pueden estar en el mismo semestre.");
 						}
@@ -79,7 +80,7 @@ function findPrerreq(curso) {
 						
 						ctx.stroke();
 					}
-					else {
+					else { // if prerequsite hidden
 						alert("El curso " + curso.nombre + " tiene como prerrequisito al curso " + otroCurso.nombre);
 					}
 				}
@@ -99,7 +100,7 @@ function findCorreq(curso) {
 					if (otroCurso.show) { // if correquisito is displayed
 						ctx.lineWidth = lineWidth;  // draw line from prerreq to current course
 						ctx.lineCap = 'round';
-						ctx.strokeStyle = "#000099";
+						ctx.strokeStyle = "#000099"; // blue lines
 						ctx.beginPath();
 						if (otroCurso.Y > curso.Y) {
 							ctx.moveTo(otroCurso.X, otroCurso.Y - boxHeight/2 - lineWidth);
@@ -111,7 +112,7 @@ function findCorreq(curso) {
 						}
 						ctx.stroke();
 					}
-					else { // si no se muestra el correquisito, avisar
+					else if (!grab) { // si no se muestra el correquisito, avisar
 						alert("El curso " + curso.nombre + " tiene como correquisito al curso " + otroCurso.nombre);
 					}
 				}
@@ -122,11 +123,10 @@ function findCorreq(curso) {
 
 function render() {
 	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(0, 0, stage.width, stage.height);
-	for (var i=0; i<listaCursos.length; i++) {
+	ctx.fillRect(0, 0, stage.width, stage.height); // erase stage, don't use stage.width = stage.width method because it messes with oversampling resolution effect
+	for (var i=0; i<listaCursos.length; i++) { // for every course
 		var curso = listaCursos[i];
-		if (curso.show) {
-			
+		if (curso.show) { // if course is showing
 			switch (Number(curso.semestral)) { // Different colors show primer semestre, segundo semestre, or anual
 				case 0:
 					ctx.fillStyle = "#33AA00"; // anual is green
@@ -145,7 +145,7 @@ function render() {
 			ctx.fillStyle = '#000000';
 			ctx.textAlign = 'center';
 			ctx.font = 'bold 10pt Arial';
-			ctx.fillText(curso.nombre, curso.X, curso.Y+lineWidth); // escribe nombre
+			ctx.fillText(curso.nombre, curso.X, curso.Y+lineWidth); // escribe nombre curso
 		}
 	}
 	
@@ -154,7 +154,7 @@ function render() {
 	ctx.fillStyle = '#000000';
 	ctx.textAlign = 'left';
 	ctx.font = 'bold 12pt Arial';
-	if (biologia) {
+	if (biologia) { //toggle buttons
 		ctx.fillText("Quitar cursos biologia", btnBiologia.X, btnBiologia.Y+lineWidth); // escribe nombre
 	}
 	else {
@@ -203,74 +203,86 @@ function getDistance(x1, y1, x2, y2) { // find distance between two points
 	return dist;
 }
 
-function clickHandler(e) { // click 
-	var rect = stage.getBoundingClientRect();
-	var clickX = e.clientX - rect.left; // find real coord
-	var clickY = e.clientY - rect.top;
-	if (hitTest(btnBiologia, clickX-80, clickY)) {
-		biologia = !biologia; // toggle biologia courses
-		//alert("toggle bio");
-		init();
-	}
-	else if (hitTest(btnMicrobio, clickX-80, clickY)) {
-		microbio = !microbio; // toggle microbiologia courses
-		//alert("toggle microbio");
-		init();
-	}
-	/*else if (hitTest(btnElectivas, clickX-80, clickY)) {
-		electivas = !electivas; // toggle microbiologia courses
-		//alert("toggle microbio");
-		init();
-	}*/
-	else if (hitTest(btnReset, clickX-80, clickY)) {
-		stage.removeEventListener("click", clickHandler, false); // click handler
-		stage.removeEventListener("mousedown", downHandler, false);
-		stage.removeEventListener("mouseup", upHandler, false);
-		stage.removeEventListener("mousemove", mouseMov, false);
-		preload();
-	}
-	else { // display course info
-		for (var i=0; i<listaCursos.length; i++) {
-			if (hitTest(listaCursos[i], clickX, clickY)) {
-				var r = confirm("Nombre: " + listaCursos[i].nombre + ". Código: " + listaCursos[i].codigo + "\n Quieres quitar este curso?");
-				if (r) {
-					listaCursos[i].remove = true;
-					init();
+function clickHandler(e) { // click
+	if (!grabbed) { // if not tiggered by a drag event
+		var clickX = e.pageX - rect.left; // find real coord
+		var clickY = e.pageY - rect.top;
+		if (hitTest(btnBiologia, clickX-80, clickY)) { // if btnBiologia clicked
+			biologia = !biologia; // toggle biologia courses
+			init();
+		}
+		else if (hitTest(btnMicrobio, clickX-80, clickY)) { // if microbiologia clicked
+			microbio = !microbio; // toggle microbiologia courses
+			init();
+		}
+		/*else if (hitTest(btnElectivas, clickX-80, clickY)) { // if electivas clicked TO DO: get rid of this?
+			electivas = !electivas; // toggle microbiologia courses
+			//alert("toggle microbio");
+			init();
+		}*/
+		else if (hitTest(btnReset, clickX-80, clickY)) { // if reset clicked
+			stage.removeEventListener("click", clickHandler, false); // remove all event listeners
+			stage.removeEventListener("mousedown", downHandler, false);
+			stage.removeEventListener("mouseup", upHandler, false);
+			stage.removeEventListener("mousemove", mouseMov, false);
+			preload(); // reload spreadsheet
+		}
+		else { // display course info
+			for (var i=0; i<listaCursos.length; i++) { // for every course
+				if (hitTest(listaCursos[i], clickX, clickY)) { // if course clicked
+					var r = confirm("Nombre: " + listaCursos[i].nombre + ". Código: " + listaCursos[i].codigo + "\n Quieres quitar este curso?"); // display course info
+					if (r) { // if user says it's ok to remove course
+						listaCursos[i].remove = true; // remove course
+						init(); // redraw everything
+					}
+					break; // stop looking for other clicked courses in this click
 				}
-				break;
 			}
 		}
+	}
+	else { // if triggered by a drag event
+		grabbed = false; // do nothing and set grabbed to false
 	}
 }
 
 function upHandler(e) { // set grab false when mouseUp
-	grab = false;
-	cursoSelec.semestre = Math.floor(cursoSelec.X/(boxWidth+spacerX) + 0.5);
-	cursoSelec = {};
-	init();
+	var newSemestre = Math.floor(cursoSelec.X/(boxWidth+spacerX) + 1); // determine new semester based on course's X location
+	if (newSemestre < 1) { // if new semester is 0 or something
+		newSemestre = 1; // set it to 1
+	}
+	grab = false; // grab ends (grabbed stays true to stop clickEvent from triggering)
+	cursoSelec.semestre = newSemestre; // set new semester
+	cursoSelec = {}; // empty selected course
+	init(); // redraw
 }
 
 function downHandler(e) { // start grab
-	var clickX = e.clientX - rect.left; // find real coord
-	var clickY = e.clientY - rect.top;
-	grab = true;
-	for (var i=0; i<listaCursos.length; i++) {
-		if (hitTest(listaCursos[i], clickX, clickY)) {
-			cursoSelec = listaCursos[i];
+	var clickX = e.pageX - rect.left; // find real coord
+	var clickY = e.pageY - rect.top;
+	grab = true; // real variable
+	for (var i=0; i<listaCursos.length; i++) { // for every course
+		if (hitTest(listaCursos[i], clickX, clickY)) { // if course dragged
+			cursoSelec = listaCursos[i]; // set selected course to this course
 		}
 	}
 }
 
 function mouseMov(e) { // store mouse coord
-	var mouseX = e.clientX - rect.left; // find real coord
-	var mouseY = e.clientY - rect.top;
-	cursoSelec.X = mouseX;
-	cursoSelec.Y = mouseY;
-	render();
+	if (grab) { // if dragging a course
+		grabbed = true; // 'fake'var, sets to false in clickHandler
+		var mouseX = e.pageX - rect.left; // find real coord
+		var mouseY = e.pageY - rect.top;
+		cursoSelec.X = mouseX; // set course's coordinates to mouse's
+		cursoSelec.Y = mouseY;
+		render(); // redraw (just redraw, no need to reorganize semester arrays with init() )
+	}
+	else { // if not dragging a course
+		grabbed = false; // makes sure grabbed is false, in case clickHandler misses it
+	}
 }
 
 function init() { // re draw everything
-	semestres = [];
+	semestres = []; // empty semestres so as to not have duplicate courses
 	
 	for (var i=0; i<(numSemestres+1); i++) { // añade un array dentro de semestres para cada semestre
 		var nuevoSemestre = [];
@@ -301,7 +313,7 @@ function preload() { // load db before init
 		}
 	}
 	
-	stage.addEventListener("click", clickHandler, false); // click handler
+	stage.addEventListener("click", clickHandler, false); // event handlers
 	stage.addEventListener("mousedown", downHandler, false);
 	stage.addEventListener("mouseup", upHandler, false);
 	stage.addEventListener("mousemove", mouseMov, false);
