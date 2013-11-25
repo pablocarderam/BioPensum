@@ -3,7 +3,7 @@
 var page = document.getElementById("page"), // get div element covering whole page, for mouse and touch events
 stage = document.getElementById("stage"), // get canvas element and context
 ctx = stage.getContext("2d");
-ctx.scale(2, 2); // scale back to full dimensions after oversampling and reduction
+ctx.scale(2, 2); // scale back to full dimensions after oversampling and reduction TO DO: check mobile compatibility
 
 var listaCursos = []; // base de datos todos los cursos
 var semestres = []; // array guarda arrays que son listas de cursos de cada semestre
@@ -23,16 +23,18 @@ var rect = stage.getBoundingClientRect(); // for getting mouse event coordinates
 var grab = false; // for dragging courses
 var grabbed = false; // prevents clickHandler firing every time a course is dragged
 var cursoSelec = {}; // guarda al curso seleccionado
+var newFrame = true; // prevents from rendering too quickly
 
 // Appearance
 var boxWidth = 150;
 var boxHeight = 30;
 var spacerX = 50;
 var spacerY = 30;
-var lineWidth = 6;
+var lineWidth = 4;
+var frameRate = 24;
 
 function cursoNuevo(curso) { // construye ícono del curso
-	if ( ((curso.programa === "-") || (biologia && (curso.programa === "biologia") ) || (microbio && curso.programa === "microbiologia" )) && !(!electivas && (curso.semestre === "electiva")) && !(curso.remove)) { // Mostrar solo materias de los programas escogidos TO DO: make this if block the else block
+	if ( ((curso.programa === "") || (biologia && (curso.programa === "biologia") ) || (microbio && curso.programa === "microbiologia" )) && !(!electivas && (curso.semestre === "electiva")) && !(curso.remove)) { // Mostrar solo materias de los programas escogidos TO DO: make this if block the else block
 		curso.show = true; // show curso
 		if (curso.semestre === "electiva") { // si es electiva, poner al final
 			curso.semestre = 10;
@@ -50,7 +52,7 @@ function cursoNuevo(curso) { // construye ícono del curso
 }
 
 function findPrerreq(curso) {
-	if (curso.prerrequisitos !== "-") { // if curso has prerequisites
+	if (curso.prerrequisitos !== "") { // if curso has prerequisites
 		var prerreqArr = curso.prerrequisitos.split(", "); // break prerrequisitos string into array of prerreq
 		for (var i=0; i<prerreqArr.length; i++) { // for every prerreq
 			var prerreq = prerreqArr[i];
@@ -61,13 +63,15 @@ function findPrerreq(curso) {
 						ctx.lineWidth = lineWidth;  // draw line from prerreq to current course
 						ctx.lineCap = 'round';
 						ctx.lineJoin = 'round';
-						ctx.strokeStyle = "#990000"; // red lines
+						ctx.strokeStyle = "#DD0000"; // red lines
 						ctx.beginPath();
-						var dif = Math.abs(otroCurso.semestre-curso.semestre); // stores distance in semesters
-						if (dif === 0) { // si estan en el mismo semestre, alertar
-							alert (otroCurso.nombre + " es prerrequisito de " + curso.nombre + " y no pueden estar en el mismo semestre.");
+						var dif = curso.semestre-otroCurso.semestre; // stores distance in semesters
+						if (!grab) {
+							if (dif < 1) { // si estan en el mismo semestre, alertar
+								alert (otroCurso.nombre + " es prerrequisito de " + curso.nombre + " y no pueden estar en el mismo semestre.");
+							}
 						}
-						else if (dif === 1) { // si estan a un semestre de distancia, dibujar linea normal
+						if (dif === 1) { // si estan a un semestre de distancia, dibujar linea normal
 							ctx.moveTo(otroCurso.X + boxWidth/2 + lineWidth, otroCurso.Y);
 							ctx.lineTo(curso.X - boxWidth/2 - lineWidth, curso.Y);
 						}
@@ -90,7 +94,7 @@ function findPrerreq(curso) {
 }
 
 function findCorreq(curso) {
-	if (curso.correquisitos !== "-") {
+	if (curso.correquisitos !== "") {
 		var correqArr = curso.correquisitos.split(", "); // break prerrequisitos string into array of prerreq
 		for (var i=0; i<correqArr.length; i++) { // for every prerreq
 			var correq = correqArr[i];
@@ -122,71 +126,88 @@ function findCorreq(curso) {
 }
 
 function render() {
-	ctx.fillStyle = "#FFFFFF";
-	ctx.fillRect(0, 0, stage.width, stage.height); // erase stage, don't use stage.width = stage.width method because it messes with oversampling resolution effect
-	for (var i=0; i<listaCursos.length; i++) { // for every course
-		var curso = listaCursos[i];
-		if (curso.show) { // if course is showing
-			switch (Number(curso.semestral)) { // Different colors show primer semestre, segundo semestre, or anual
-				case 0:
-					ctx.fillStyle = "#33AA00"; // anual is green
-					break;
-				case 1:
-					ctx.fillStyle = "#FF0000"; // semestre 1 is red
-					break;
-				case 2:
-					ctx.fillStyle = "#0044EE"; // semestre 2 is blue
-					break;
+	if (newFrame) {
+		ctx.fillStyle = "#FFFFFF";
+		ctx.fillRect(0, 0, stage.width, stage.height); // erase stage, don't use stage.width = stage.width method because it messes with oversampling resolution effect
+		for (var i=0; i<listaCursos.length; i++) { // for every course
+			var curso = listaCursos[i];
+			if (curso.show) { // if course is showing
+				switch (Number(curso.semestral)) { // Different colors show primer semestre, segundo semestre, or anual
+					case 0:
+						ctx.fillStyle = "#33AA00"; // anual is green
+						break;
+					case 1:
+						ctx.fillStyle = "#FF0000"; // semestre 1 is red
+						break;
+					case 2:
+						ctx.fillStyle = "#0099EE"; // semestre 2 is blue
+						break;
+				}
+				
+				findPrerreq(curso); // draw prerrequisito lines
+				findCorreq(curso); // draw correquisito lines
+				ctx.fillRect(curso.X-boxWidth/2, curso.Y-boxHeight/2, boxWidth, boxHeight); // dibuja rectangulo
+				ctx.fillStyle = '#000000';
+				ctx.textAlign = 'center';
+				ctx.font = 'bold 8pt Arial';
+				ctx.fillText(curso.nombre, curso.X, curso.Y+lineWidth); // escribe nombre curso
 			}
-			
-			findPrerreq(curso); // draw prerrequisito lines
-			findCorreq(curso); // draw correquisito lines
-			ctx.fillRect(curso.X-boxWidth/2, curso.Y-boxHeight/2, boxWidth, boxHeight); // dibuja rectangulo
-			ctx.fillStyle = '#000000';
-			ctx.textAlign = 'center';
-			ctx.font = 'bold 10pt Arial';
-			ctx.fillText(curso.nombre, curso.X, curso.Y+lineWidth); // escribe nombre curso
 		}
-	}
-	
-	// dibuja botones de toggle biologia y microbiologia
-	//ctx.fillRect(btnBiologia.X-10, btnBiologia.Y-10, 20, 20); // dibuja rectangulo
-	ctx.fillStyle = '#000000';
-	ctx.textAlign = 'left';
-	ctx.font = 'bold 12pt Arial';
-	if (biologia) { //toggle buttons
-		ctx.fillText("Quitar cursos biologia", btnBiologia.X, btnBiologia.Y+lineWidth); // escribe nombre
+		
+		// dibuja botones de toggle biologia y microbiologia
+		//ctx.fillRect(btnBiologia.X-10, btnBiologia.Y-10, 20, 20); // dibuja rectangulo
+		ctx.fillStyle = '#000000';
+		ctx.textAlign = 'left';
+		ctx.font = 'bold 12pt Arial';
+		if (biologia) { //toggle buttons
+			ctx.fillText("Quitar cursos biologia", btnBiologia.X, btnBiologia.Y+lineWidth); // escribe nombre
+		}
+		else {
+			ctx.fillText("Mostrar cursos biologia", btnBiologia.X, btnBiologia.Y+lineWidth); // escribe nombre
+		}
+		
+		if (microbio) {
+			ctx.fillText("Quitar cursos microbiologia", btnMicrobio.X, btnMicrobio.Y+lineWidth); // escribe nombre
+		}
+		else {
+			ctx.fillText("Mostrar cursos microbiologia", btnMicrobio.X, btnMicrobio.Y+lineWidth); // escribe nombre
+		}
+		/*
+		if (electivas) {
+			ctx.fillText("Quitar cursos electivos", btnElectivas.X, btnElectivas.Y+lineWidth); // escribe nombre
+		}
+		else {
+			ctx.fillText("Mostrar cursos electivos", btnMicrobio.X, btnElectivas.Y+lineWidth); // escribe nombre
+		}*/
+		
+		// dibujar semestres y créditos
+		ctx.textAlign = 'center';
+		ctx.font = '11pt Arial';
+		for (var j=1; j<semestres.length; j++) { // añade un array dentro de semestres para cada semestre
+			ctx.fillText("Semestre " + j, (boxWidth+spacerX)*(j-0.5), (boxHeight+spacerY*2)+lineWidth); // escribe semestre
+			ctx.fillText("Créditos: " + semestres[j].creditos, (boxWidth+spacerX)*(j-0.5), (boxHeight+spacerY*2.5)+lineWidth); // escribe semestre
+		}
+		
+		ctx.fillStyle = '#FF0000'; // dibujar botón reset 
+		ctx.textAlign = 'left';
+		ctx.font = 'bold 20pt Arial';
+		ctx.fillText("RESET!", btnReset.X, btnReset.Y+lineWidth);
+		
+		newFrame = false; // set newFrame to false, don't allow new render
+		var timer = setTimeout(function(){timerFunc()},1000/frameRate); // start timer to either set newFrame to true or to render again
 	}
 	else {
-		ctx.fillText("Mostrar cursos biologia", btnBiologia.X, btnBiologia.Y+lineWidth); // escribe nombre
+		var tryAgainTimer = setTimeout(function(){tryAgain()},1000/frameRate); // start timer to either set newFrame to true or to render again
 	}
-	
-	if (microbio) {
-		ctx.fillText("Quitar cursos microbiologia", btnMicrobio.X, btnMicrobio.Y+lineWidth); // escribe nombre
-	}
-	else {
-		ctx.fillText("Mostrar cursos microbiologia", btnMicrobio.X, btnMicrobio.Y+lineWidth); // escribe nombre
-	}
-	/*
-	if (electivas) {
-		ctx.fillText("Quitar cursos electivos", btnElectivas.X, btnElectivas.Y+lineWidth); // escribe nombre
-	}
-	else {
-		ctx.fillText("Mostrar cursos electivos", btnMicrobio.X, btnElectivas.Y+lineWidth); // escribe nombre
-	}*/
-	
-	// dibujar semestres y créditos
-	ctx.textAlign = 'center';
-	ctx.font = '11pt Arial';
-	for (var j=1; j<semestres.length; j++) { // añade un array dentro de semestres para cada semestre
-		ctx.fillText("Semestre " + j, (boxWidth+spacerX)*(j-0.5), (boxHeight+spacerY*2)+lineWidth); // escribe semestre
-		ctx.fillText("Créditos: " + semestres[j].creditos, (boxWidth+spacerX)*(j-0.5), (boxHeight+spacerY*2.5)+lineWidth); // escribe semestre
-	}
-	
-	ctx.fillStyle = '#FF0000'; // dibujar botón reset 
-	ctx.textAlign = 'left';
-	ctx.font = 'bold 20pt Arial';
-	ctx.fillText("RESET!", btnReset.X, btnReset.Y+lineWidth);
+}
+
+function timerFunc() {
+	newFrame = true; // set to true
+}
+
+function tryAgain() {
+	newFrame = true; // set to true
+	render();
 }
 
 function hitTest(obj, x, y) {  // tests against stage coordinates
@@ -204,6 +225,7 @@ function getDistance(x1, y1, x2, y2) { // find distance between two points
 }
 
 function clickHandler(e) { // click
+	console.log("click");
 	if (!grabbed) { // if not tiggered by a drag event
 		var clickX = e.pageX - rect.left; // find real coord
 		var clickY = e.pageY - rect.top;
@@ -225,12 +247,15 @@ function clickHandler(e) { // click
 			stage.removeEventListener("mousedown", downHandler, false);
 			stage.removeEventListener("mouseup", upHandler, false);
 			stage.removeEventListener("mousemove", mouseMov, false);
+			stage.removeEventListener("touchstart", downHandler, false);
+			stage.removeEventListener("touchend", upHandler, false);
+			stage.removeEventListener("touchmove", mouseMov, false);
 			preload(); // reload spreadsheet
 		}
 		else { // display course info
 			for (var i=0; i<listaCursos.length; i++) { // for every course
 				if (hitTest(listaCursos[i], clickX, clickY)) { // if course clicked
-					var r = confirm("Nombre: " + listaCursos[i].nombre + ". Código: " + listaCursos[i].codigo + "\n Quieres quitar este curso?"); // display course info
+					var r = confirm("Nombre: " + listaCursos[i].nombre + ". \nCódigo: " + listaCursos[i].codigo + ". \nPrerrequisitos: " + listaCursos[i].prerrequisitos + ". \nCreditos: " + listaCursos[i].creditos + "\n Quieres quitar este curso?"); // display course info
 					if (r) { // if user says it's ok to remove course
 						listaCursos[i].remove = true; // remove course
 						init(); // redraw everything
@@ -259,9 +284,9 @@ function upHandler(e) { // set grab false when mouseUp
 function downHandler(e) { // start grab
 	var clickX = e.pageX - rect.left; // find real coord
 	var clickY = e.pageY - rect.top;
-	grab = true; // real variable
 	for (var i=0; i<listaCursos.length; i++) { // for every course
 		if (hitTest(listaCursos[i], clickX, clickY)) { // if course dragged
+			grab = true; // real variable
 			cursoSelec = listaCursos[i]; // set selected course to this course
 		}
 	}
@@ -281,6 +306,21 @@ function mouseMov(e) { // store mouse coord
 	}
 }
 
+function touchUp(e) { // set grab false when mouseUp
+	upHandler(e);
+}
+
+function touchDown(e) { // start drag
+	downHandler(e);
+}
+
+function touchMov(e) {
+	if (grab) {
+		e.preventDefault();
+		mouseMov(e);
+	}
+}
+
 function init() { // re draw everything
 	semestres = []; // empty semestres so as to not have duplicate courses
 	
@@ -297,11 +337,27 @@ function init() { // re draw everything
 }
 
 function preload() { // load db before init
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fillRect(0, 0, stage.width, stage.height); // erase stage, don't use stage.width = stage.width method because it messes with oversampling resolution effect
+	
+	ctx.fillStyle = '#000000'; // dibujar botón reset 
+	ctx.textAlign = 'left';
+	ctx.font = 'bold 20pt Arial';
+	ctx.fillText("Calentando motores...", 100, 100); // escribe preloader	
+	
 	Tabletop.init({ // http://www.mikeball.us/blog/using-google-spreadsheets-and-tabletop-js-as-a-web-application-back-end
 		key: '0AihSbOSqv8G9dDR4WUZUWHRyRE9HSGhmR3NlT2NBVHc', // remember spreadshee must be published to web
 		callback: showInfo,
 		simpleSheet: true 
 	});
+	
+	stage.addEventListener("click", clickHandler, false); // event handlers
+	stage.addEventListener("mousedown", downHandler, false);
+	stage.addEventListener("mouseup", upHandler, false);
+	stage.addEventListener("mousemove", mouseMov, false);
+	stage.addEventListener("touchstart", touchDown, false);
+	stage.addEventListener("touchend", touchUp, false);
+	stage.addEventListener("touchmove", touchMov, false);
 	
 	function showInfo(data, tabletop) {
 		listaCursos = data; // save spreadsheet to js
@@ -313,10 +369,7 @@ function preload() { // load db before init
 		}
 	}
 	
-	stage.addEventListener("click", clickHandler, false); // event handlers
-	stage.addEventListener("mousedown", downHandler, false);
-	stage.addEventListener("mouseup", upHandler, false);
-	stage.addEventListener("mousemove", mouseMov, false);
+	
 }
 
 preload();
