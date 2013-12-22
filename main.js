@@ -3,7 +3,7 @@
 var page = document.getElementById("page"), // get div element covering whole page, for mouse and touch events
 stage = document.getElementById("stage"), // get canvas element and context
 ctx = stage.getContext("2d");
-ctx.scale(2, 2); // scale back to full dimensions after oversampling and reduction TO DO: check mobile compatibility
+ctx.scale(1.5, 1.5); // scale back to full dimensions after oversampling and reduction TO DO: check mobile compatibility
 
 var listaCursos = []; // base de datos todos los cursos
 var semestres = []; // array guarda arrays que son listas de cursos de cada semestre
@@ -128,7 +128,7 @@ function findCorreq(curso) {
 function render() {
 	if (newFrame) {
 		ctx.fillStyle = "#FFFFFF";
-		ctx.fillRect(0, 0, stage.width, stage.height); // erase stage, don't use stage.width = stage.width method because it messes with oversampling resolution effect
+		ctx.fillRect(0, 0, stage.width, stage.height); // erase stage. don't use stage.width = stage.width method because it messes with oversampling resolution effect
 		for (var i=0; i<listaCursos.length; i++) { // for every course
 			var curso = listaCursos[i];
 			if (curso.show) { // if course is showing
@@ -254,7 +254,7 @@ function clickHandler(e) { // click
 		}
 		else { // display course info
 			for (var i=0; i<listaCursos.length; i++) { // for every course
-				if (hitTest(listaCursos[i], clickX, clickY)) { // if course clicked
+				if (hitTest(listaCursos[i], clickX, clickY) && (listaCursos[i].show)) { // if course clicked
 					var r = confirm("Nombre: " + listaCursos[i].nombre + ". \nCódigo: " + listaCursos[i].codigo + ". \nPrerrequisitos: " + listaCursos[i].prerrequisitos + ". \nCreditos: " + listaCursos[i].creditos + "\n Quieres quitar este curso?"); // display course info
 					if (r) { // if user says it's ok to remove course
 						listaCursos[i].remove = true; // remove course
